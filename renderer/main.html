@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src http://127.0.0.1:8000; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+  <title>Meeting Assistant</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎙️ Meeting Assistant</h1>
+      <p class="subtitle">Real-time AI Teleprompter for Meetings</p>
+    </header>
+
+    <main>
+      <section class="settings-section">
+        <h2>🤖 AI 大模型配置</h2>
+        <div class="form-group">
+          <label>快捷选择</label>
+          <div class="preset-buttons">
+            <button class="preset-btn" data-base="https://api.openai.com/v1" data-model="gpt-4">OpenAI</button>
+            <button class="preset-btn" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">DeepSeek</button>
+            <button class="preset-btn" data-base="https://api.moonshot.cn/v1" data-model="moonshot-v1-8k">Kimi</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="api-key">API Key</label>
+          <input type="password" id="api-key" placeholder="输入您的 API Key">
+        </div>
+        <div class="form-group">
+          <label for="api-base">API Base URL</label>
+          <input type="text" id="api-base" placeholder="https://api.openai.com/v1">
+        </div>
+        <div class="form-group">
+          <label for="model">模型名称</label>
+          <input type="text" id="model" placeholder="输入服务商提供的模型名称">
+        </div>
+        <button id="save-api-settings" class="btn btn-primary">保存 API 设置</button>
+        <button id="test-api" class="btn btn-secondary">测试连接</button>
+      </section>
+
+      <section class="settings-section">
+        <h2>📚 知识库管理</h2>
+        <div id="kb-status" class="kb-status">加载中...</div>
+        <div id="kb-file-list" class="kb-file-list"></div>
+        <button id="refresh-kb" class="btn btn-secondary btn-small">刷新列表</button>
+        <button id="cleanup-kb" class="btn btn-danger btn-small">清理无效缓存</button>
+        <button id="reload-kb" class="btn btn-secondary btn-small">重新加载未加载文件</button>
+        <hr>
+        <div class="form-group">
+          <label for="kb-upload">上传文档 (PDF, TXT, DOCX)</label>
+          <input type="file" id="kb-upload" multiple accept=".pdf,.txt,.docx">
+        </div>
+        <button id="upload-kb" class="btn btn-primary">上传到知识库</button>
+
+        <div class="form-group">
+          <label for="kb-text">直接添加文本</label>
+          <textarea id="kb-text" rows="4" placeholder="粘贴文本内容到这里..."></textarea>
+        </div>
+        <button id="add-kb-text" class="btn btn-secondary">添加文本</button>
+
+        <button id="clear-kb" class="btn btn-danger">清空知识库</button>
+      </section>
+
+      <section class="settings-section">
+        <h2>🗣️ 语音识别设置</h2>
+        <div class="form-group">
+          <label for="voice-device">输入设备</label>
+          <select id="voice-device">
+            <option value="-1">自动选择</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="voice-language">识别语言</label>
+          <select id="voice-language">
+            <option value="zh-CN">中文 (简体)</option>
+            <option value="zh-TW">中文 (繁体)</option>
+            <option value="en-US">英语 (美国)</option>
+            <option value="en-GB">英语 (英国)</option>
+            <option value="ja-JP">日语</option>
+            <option value="ko-KR">韩语</option>
+          </select>
+        </div>
+        <div class="voice-info">
+          <p>💡 语音识别使用项目内置的 faster-whisper，本地离线运行。</p>
+          <p>💡 首次监听会准备项目目录中的 base 模型，之后直接复用。</p>
+        </div>
+        <button id="save-voice-settings" class="btn btn-primary">保存语音设置</button>
+      </section>
+
+      <section class="quick-actions">
+        <h2>⚡ 快捷操作</h2>
+        <button id="show-teleprompter" class="btn btn-primary btn-large">打开提词器</button>
+        <div class="shortcuts-info">
+          <h3>快捷键</h3>
+          <ul>
+            <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> - 显示/隐藏提词器</li>
+            <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd> - 隐藏/显示设置窗口</li>
+            <li><kbd>Ctrl</kbd> + <kbd>H</kbd> - 提词器隐私模式</li>
+            <li><kbd>Esc</kbd> - 隐藏提词器窗口内容</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <div id="notification" class="notification hidden"></div>
+  </div>
+
+  <script src="scripts/main.js"></script>
+</body>
+</html>

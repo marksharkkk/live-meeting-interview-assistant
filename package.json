@@ -1,0 +1,21 @@
+{
+  "name": "meeting-assistant",
+  "version": "1.0.0",
+  "description": "Real-time meeting teleprompter with AI-generated answers",
+  "main": "main.js",
+  "engines": {
+    "node": "24.19.0",
+    "npm": "11.17.0"
+  },
+  "packageManager": "npm@11.17.0",
+  "volta": {
+    "node": "24.19.0",
+    "npm": "11.17.0"
+  },
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^44.0.0"
+  }
+}

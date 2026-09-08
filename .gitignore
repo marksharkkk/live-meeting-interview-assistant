@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.env
+backend/knowledge_base/chroma_db/
+backend/knowledge_base/kb_cache.pkl
+backend/knowledge_base/kb_cache.json
+backend/knowledge_base/uploads/*
+!backend/knowledge_base/uploads/.gitkeep
+backend/whisper_models/
