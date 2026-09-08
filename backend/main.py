@@ -97,7 +97,7 @@ class SettingsUpdate(BaseModel):
     openai_api_base: Optional[str] = Field(default=None, max_length=1000)
     openai_model: Optional[str] = Field(default=None, max_length=200)
     voice_language: Optional[str] = Field(default=None, max_length=20)
-    voice_input_device: int = Field(default=-1, ge=-1, le=1000)
+    voice_input_device: Optional[int] = Field(default=None, ge=-1, le=1000)
     clear_openai_api_key: bool = False
 
     @field_validator("openai_api_base")
