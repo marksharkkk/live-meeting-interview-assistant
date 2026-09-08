@@ -17,6 +17,8 @@
       <div class="privacy-badge">👁️ 隐私模式</div>
       <div class="window-controls">
         <button class="control-btn" id="btn-privacy" title="隐私模式(Ctrl+H)">🛡️</button>
+        <button class="control-btn" id="btn-history" title="答案历史">📜</button>
+        <button class="control-btn" id="btn-export" title="导出会议记录">⬇</button>
         <button class="control-btn" id="btn-clear" title="Clear">🗑️</button>
         <button class="control-btn" id="btn-minimize" title="Minimize">─</button>
         <button class="control-btn" id="btn-close" title="Close">×</button>
@@ -43,6 +45,14 @@
     <div class="transcript-section">
       <div class="section-label">实时转录:</div>
       <div id="transcript-container" class="transcript-container" contenteditable="true" spellcheck="false"></div>
+    </div>
+
+    <div id="history-panel" class="history-panel hidden">
+      <div class="history-header">
+        <span>答案历史</span>
+        <button class="control-btn" id="btn-close-history" title="关闭">×</button>
+      </div>
+      <div id="history-list" class="history-list"></div>
     </div>
   </div>
 

@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeTeleprompter: () => ipcRenderer.send('close-teleprompter'),
   minimizeTeleprompter: () => ipcRenderer.send('minimize-teleprompter'),
   setPrivacyMode: (enabled) => ipcRenderer.send('set-privacy-mode', Boolean(enabled)),
+  exportMeetingRecord: (payload) => ipcRenderer.invoke('export-meeting-record', payload),
   onPrivacyModeChanged: (callback) => subscribe('privacy-mode-changed', callback),
 });

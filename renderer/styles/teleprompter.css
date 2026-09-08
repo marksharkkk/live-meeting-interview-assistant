@@ -200,6 +200,10 @@ body.privacy-mode .teleprompter-container .transcript-section {
   visibility: hidden !important;
 }
 
+body.privacy-mode .teleprompter-container .history-panel {
+  visibility: hidden !important;
+}
+
 /* 答案区域 - 始终优先显示 */
 .current-answer-section {
   flex: 1;
@@ -269,6 +273,72 @@ body.privacy-mode .teleprompter-container .transcript-section {
 .transcript-item:last-child {
   color: var(--text-light);
   font-weight: bold;
+}
+
+.history-panel {
+  position: absolute;
+  inset: 2.5rem 0.5rem 0.5rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-darker);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.5rem;
+  -webkit-app-region: no-drag;
+}
+
+.history-panel.hidden {
+  display: none;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-light);
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-list {
+  overflow-y: auto;
+  padding-top: 0.35rem;
+}
+
+.history-empty {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.75rem 0.25rem;
+}
+
+.history-entry {
+  padding: 0.45rem 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.history-time {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+}
+
+.history-question,
+.history-answer {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.history-question {
+  color: #82b1ff;
+}
+
+.history-answer {
+  color: var(--accent);
 }
 
 .section-label {

@@ -242,3 +242,20 @@ ipcMain.on('minimize-teleprompter', (event) => {
 ipcMain.on('set-privacy-mode', (event, enabled) => {
   if (isTrustedSender(event) && typeof enabled === 'boolean') applyPrivacyMode(enabled);
 });
+
+ipcMain.handle('export-meeting-record', async (event, payload) => {
+  if (!isTrustedSender(event)) throw new Error('Untrusted renderer');
+  const content = typeof payload?.content === 'string' ? payload.content : '';
+  if (!content || content.length > 500_000) throw new Error('Invalid meeting record');
+  const defaultName = typeof payload?.filename === 'string' && payload.filename.trim()
+    ? payload.filename.trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 120)
+    : `meeting-record-${new Date().toISOString().slice(0, 10)}.txt`;
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: '导出会议记录',
+    defaultPath: defaultName.endsWith('.txt') ? defaultName : `${defaultName}.txt`,
+    filters: [{ name: '文本文件', extensions: ['txt'] }],
+  });
+  if (result.canceled || !result.filePath) return { canceled: true };
+  await fs.promises.writeFile(result.filePath, content, 'utf8');
+  return { canceled: false, filePath: result.filePath };
+});

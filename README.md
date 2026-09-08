@@ -30,6 +30,11 @@
 - `Ctrl + Shift + M` - 最小化/恢复设置窗口
 - `Ctrl + H` - 开启/关闭隐私模式
 
+### 6. 记录与导出
+- 自动保存最近 50 条问答历史（仅保存在本机浏览器存储）
+- 提词器中可查看历史答案
+- 一键导出当前会议的转录与问答为 TXT 文件
+
 ## 技术架构
 
 ### 前端：Electron
@@ -145,7 +150,7 @@ volta run npm start
 
 ## 技术栈
 
-- Electron 28
+- Electron 44
 - FastAPI
 - LangChain
 - faster-whisper + PyAudio
@@ -155,6 +160,6 @@ volta run npm start
 
 - [ ] 支持更多大模型提供商（通义千问、Kimi、Gemini）
 - [ ] 优化语音识别准确率
-- [ ] 增加答案历史记录
+- [x] 增加答案历史记录与会议记录导出
 - [ ] 支持多语言答案输出
 - [ ] 优化性能，降低延迟

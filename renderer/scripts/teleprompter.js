@@ -10,6 +10,11 @@ const elements = {
   btnResume: document.getElementById('btn-resume'),
   btnClear: document.getElementById('btn-clear'),
   btnPrivacy: document.getElementById('btn-privacy'),
+  btnHistory: document.getElementById('btn-history'),
+  btnExport: document.getElementById('btn-export'),
+  btnCloseHistory: document.getElementById('btn-close-history'),
+  historyPanel: document.getElementById('history-panel'),
+  historyList: document.getElementById('history-list'),
   btnMinimize: document.getElementById('btn-minimize'),
   btnClose: document.getElementById('btn-close'),
   statusDot: document.querySelector('.status-dot'),
@@ -29,6 +34,17 @@ let conversationHistory = [];
 const MAX_HISTORY_ROUNDS = 5;
 let currentQuestion = '';
 let lastAnswer = '';
+let meetingTranscript = [];
+let answerHistory = [];
+let meetingRecords = [];
+const HISTORY_STORAGE_KEY = 'meeting-assistant.answer-history.v1';
+
+try {
+  const stored = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
+  if (Array.isArray(stored)) answerHistory = stored.slice(-50);
+} catch (_error) {
+  answerHistory = [];
+}
 
 async function apiFetch(path, options = {}) {
   const config = await apiConfigPromise;
@@ -69,6 +85,20 @@ function resetButtons() {
 
 function finishAnswer(answer) {
   lastAnswer = answer;
+  const record = {
+    timestamp: new Date().toISOString(),
+    question: currentQuestion,
+    answer,
+  };
+  meetingRecords.push(record);
+  meetingRecords = meetingRecords.slice(-50);
+  answerHistory.push(record);
+  answerHistory = answerHistory.slice(-50);
+  try {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(answerHistory));
+  } catch (_error) {
+    // History is a convenience; a full meeting record can still be exported.
+  }
   conversationHistory.push(
     { role: 'user', content: currentQuestion },
     { role: 'assistant', content: answer },
@@ -77,6 +107,59 @@ function finishAnswer(answer) {
     conversationHistory = conversationHistory.slice(-MAX_HISTORY_ROUNDS * 2);
   }
   addTranscript('✅ 答案已生成，请点击“继续监听”');
+}
+
+function renderHistory() {
+  elements.historyList.replaceChildren();
+  if (!answerHistory.length) {
+    const empty = document.createElement('div');
+    empty.className = 'history-empty';
+    empty.textContent = '还没有生成过答案';
+    elements.historyList.appendChild(empty);
+    return;
+  }
+  [...answerHistory].reverse().forEach((record) => {
+    const entry = document.createElement('article');
+    entry.className = 'history-entry';
+    const time = document.createElement('div');
+    time.className = 'history-time';
+    time.textContent = new Date(record.timestamp).toLocaleString();
+    const question = document.createElement('div');
+    question.className = 'history-question';
+    question.textContent = `Q: ${record.question}`;
+    const answer = document.createElement('div');
+    answer.className = 'history-answer';
+    answer.textContent = `A: ${record.answer}`;
+    entry.append(time, question, answer);
+    elements.historyList.appendChild(entry);
+  });
+}
+
+async function exportMeetingRecord() {
+  const transcript = meetingTranscript.filter(Boolean).join('\n');
+  const records = meetingRecords
+    .filter((record) => record && record.question && record.answer)
+    .map((record) => `${new Date(record.timestamp).toLocaleString()}\nQ: ${record.question}\nA: ${record.answer}`)
+    .join('\n\n');
+  const content = [
+    'Meeting Assistant 会议记录',
+    `导出时间：${new Date().toLocaleString()}`,
+    transcript ? `\n实时转录\n${transcript}` : '',
+    records ? `\n问答记录\n${records}` : '',
+  ].filter(Boolean).join('\n');
+  if (!transcript && !records) {
+    updateStatus('', '暂无可导出的记录');
+    return;
+  }
+  try {
+    const result = await window.electronAPI.exportMeetingRecord({
+      filename: `meeting-record-${new Date().toISOString().slice(0, 10)}.txt`,
+      content,
+    });
+    if (!result?.canceled) updateStatus('', '会议记录已导出');
+  } catch (error) {
+    updateStatus('', `导出失败：${error.message}`);
+  }
 }
 
 async function generateAnswer(regenerate = false) {
@@ -215,6 +298,7 @@ async function startListening() {
       if (socket !== newSocket) return;
       const data = JSON.parse(event.data);
       if (data.type === 'transcript' && !isPaused) {
+        meetingTranscript.push(data.text);
         addTranscript(data.text, true);
       } else if (data.type === 'status') {
         updateStatus('active', data.message === 'Listening' ? '监听中…' : '正在加载语音模型…');
@@ -291,6 +375,8 @@ elements.btnClear.addEventListener('click', () => {
   conversationHistory = [];
   currentQuestion = '';
   lastAnswer = '';
+  meetingTranscript = [];
+  meetingRecords = [];
   qaIndex = 0;
   elements.transcriptContainer.replaceChildren();
   clearCurrentAnswer();
@@ -298,6 +384,12 @@ elements.btnClear.addEventListener('click', () => {
   updateStatus('', '就绪');
 });
 elements.btnPrivacy.addEventListener('click', () => setPrivacyMode(!isPrivacyMode));
+elements.btnHistory.addEventListener('click', () => {
+  renderHistory();
+  elements.historyPanel.classList.toggle('hidden');
+});
+elements.btnCloseHistory.addEventListener('click', () => elements.historyPanel.classList.add('hidden'));
+elements.btnExport.addEventListener('click', exportMeetingRecord);
 elements.btnMinimize.addEventListener('click', () => window.electronAPI.minimizeTeleprompter());
 elements.btnClose.addEventListener('click', () => window.electronAPI.closeTeleprompter());
 window.electronAPI.onPrivacyModeChanged((enabled) => setPrivacyMode(enabled, false));
