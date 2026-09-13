@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
+import os
 from threading import Lock
 from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
-TRANSLATION_MODELS_DIR = Path(__file__).resolve().parent / "translation_models"
+TRANSLATION_MODELS_DIR = Path(os.environ.get("MEETING_ASSISTANT_DATA_DIR") or Path(__file__).resolve().parent) / "translation_models"
 
 try:
     import ctranslate2

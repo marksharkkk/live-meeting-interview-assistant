@@ -48,7 +48,10 @@
   <div class="box"><strong>最简单的使用流程：</strong>打开提词器 → 选择音源和语言 → 点击“开始” → 看实时字幕 → 需要时切换“回答辅助”或开启“实时总结” → 点击“结束并保存”。</div>
 
   <h2 id="install">二、安装与启动</h2>
-  <h3>第一次安装</h3>
+  <h3>普通用户：下载 ZIP 版</h3>
+  <p>打开 <a href="https://github.com/marksharkkk/live-meeting-interview-assistant/releases">GitHub Releases</a>，下载 Windows ZIP，解压到自己有权限的文件夹，双击 <code>MeetingAssistant.exe</code>。不需要安装 Node.js、Python、uv 或 Volta。首次语音识别会下载 Whisper 模型；AI 回答和在线翻译仍需自己配置 API。</p>
+  <p>ZIP 版的数据保存在 <code>%APPDATA%\meeting-assistant\</code>，不是解压目录；换新版本时保留这个目录即可。启动时后端首次加载可能需要一两分钟。</p>
+  <h3>开发者：从源码安装</h3>
   <div class="step"><div class="num">1</div><div>先安装两个小工具。<strong>uv</strong>负责按 <code>uv.lock</code> 创建项目自己的 Python <code>.venv</code>；<strong>Volta</strong>负责按 <code>package.json</code> 固定 Node.js、npm 版本。它们会帮助安装项目包，但本身不会自动安装；电脑已有就跳过。</div></div>
   <pre><code>winget install --id=astral-sh.uv -e
 winget install Volta.Volta</code></pre>
@@ -140,6 +143,7 @@ volta --version</code></pre>
   <div class="box note"><strong>重要：</strong>AI 答案是参考建议，不是事实核验结果。面试时只使用自己的真实经历；正式会议中的敏感内容也应先确认是否允许使用 AI。</div>
 
   <h2 id="save">七、保存位置与 GitHub 安全</h2>
+  <p><strong>ZIP 版：</strong>所有本机设置、会议文件、知识库、模型和日志位于 <code>%APPDATA%\meeting-assistant\</code>。以下表格仅适用于源码版。</p>
   <p>项目根目录是：</p>
   <blockquote><code>&lt;项目目录&gt;</code></blockquote>
   <table><tr><th>内容</th><th>保存位置</th></tr>
@@ -165,7 +169,7 @@ volta --version</code></pre>
   <h2 id="help">九、常见问题</h2>
   <div class="tablewrap"><table>
     <tr><th>现象</th><th>先这样检查</th></tr>
-    <tr><td>提词器打不开或没有窗口</td><td>先彻底结束旧的会议通/Electron 进程，再双击 <code>start.bat</code>；不要同时启动多个旧版本。若仍失败，查看 <code>logs\desktop.log</code>。</td></tr>
+    <tr><td>提词器打不开或没有窗口</td><td>先彻底结束旧的会议通/Electron 进程，再启动一次；不要同时启动多个旧版本。ZIP 版查看 <code>%APPDATA%\meeting-assistant\logs\desktop.log</code>，源码版查看 <code>logs\desktop.log</code>。</td></tr>
     <tr><td>戴耳机但识别不到对方</td><td>音源选择系统音频回环或耳机输出，不要选择耳机麦克风；先播放一段会议声音测试。</td></tr>
     <tr><td>出现 Unanticipated host error</td><td>暂停监听，换成“自动（系统音频回环）”或重新选择可用设备；关闭其他占用音频设备的软件后重试。</td></tr>
     <tr><td>有声音但没有文字</td><td>确认状态显示“监听中”，确认音量确实从所选设备播放，并选择自动检测或正确语言。</td></tr>

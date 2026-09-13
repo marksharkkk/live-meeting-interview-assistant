@@ -26,7 +26,10 @@ let preparingExit = false;
 let exitPrepared = false;
 const privacyWindowStates = new Map();
 
-const logDirectory = path.join(__dirname, 'logs');
+const bundledRuntime = path.join(__dirname, 'runtime', 'python', 'python.exe');
+const isStandaloneBuild = process.platform === 'win32' && fs.existsSync(bundledRuntime);
+const appDataDirectory = isStandaloneBuild ? app.getPath('userData') : null;
+const logDirectory = isStandaloneBuild ? path.join(appDataDirectory, 'logs') : path.join(__dirname, 'logs');
 const logFile = path.join(logDirectory, 'desktop.log');
 function writeLog(message) {
   // GUI launches can lose their parent's stdout/stderr pipes on Windows.
@@ -187,7 +190,7 @@ function createTeleprompterWindow() {
 
 function startBackendServer() {
   const backendPath = path.join(__dirname, 'backend', 'main.py');
-  const pythonPath = process.platform === 'win32'
+  const pythonPath = isStandaloneBuild ? bundledRuntime : process.platform === 'win32'
     ? path.join(__dirname, '.venv', 'Scripts', 'python.exe')
     : path.join(__dirname, '.venv', 'bin', 'python');
 
@@ -199,6 +202,12 @@ function startBackendServer() {
     ...process.env,
     MEETING_ASSISTANT_TOKEN: API_TOKEN,
   };
+  if (isStandaloneBuild) {
+    backendEnv.PYTHONHOME = path.join(__dirname, 'runtime', 'python');
+    backendEnv.PYTHONPATH = path.join(__dirname, 'runtime', 'site-packages');
+    backendEnv.PYTHONNOUSERSITE = '1';
+    backendEnv.MEETING_ASSISTANT_DATA_DIR = appDataDirectory;
+  }
   // The main-window settings are persisted in backend/.env and are the
   // single source of truth. Do not let inherited shell variables silently
   // override a model or endpoint selected by the user in the UI.
@@ -239,7 +248,7 @@ function checkBackendHealth() {
   });
 }
 
-async function waitForBackend(timeoutMs = 30000) {
+async function waitForBackend(timeoutMs = 120000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (!backendProcess) return false;
@@ -293,9 +302,33 @@ if (!gotSingleInstanceLock) {
     try {
       startBackendServer();
       const ready = await waitForBackend();
-      if (!ready) throw new Error('The local service did not become ready within 30 seconds.');
+      if (!ready) throw new Error('The local service did not become ready within 120 seconds.');
       createMainWindow();
       writeLog('Startup complete: settings window created');
+      if (process.argv.includes('--smoke-test')) {
+        if (mainWindow.webContents.isLoadingMainFrame()) {
+          await new Promise((resolve) => mainWindow.webContents.once('did-finish-load', resolve));
+        }
+        app.quit();
+        return;
+      }
+      if (process.argv.includes('--capture-doc-screenshots')) {
+        const capture = async (window, filename) => {
+          if (window.webContents.isLoadingMainFrame()) {
+            await new Promise((resolve) => window.webContents.once('did-finish-load', resolve));
+          }
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          const image = await window.webContents.capturePage();
+          const folder = path.join(__dirname, 'docs', 'screenshots');
+          fs.mkdirSync(folder, { recursive: true });
+          fs.writeFileSync(path.join(folder, filename), image.toPNG());
+        };
+        await capture(mainWindow, 'settings.png');
+        createTeleprompterWindow();
+        await capture(teleprompterWindow, 'workspace.png');
+        app.quit();
+        return;
+      }
       registerShortcuts();
     } catch (error) {
       writeLog(`Startup failed: ${error.stack || error.message}`);

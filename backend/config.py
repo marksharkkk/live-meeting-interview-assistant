@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any
 
@@ -5,7 +6,7 @@ from dotenv import set_key
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-BACKEND_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = Path(os.environ.get("MEETING_ASSISTANT_DATA_DIR") or Path(__file__).resolve().parent)
 ENV_FILE = BACKEND_DIR / ".env"
 
 
@@ -43,6 +44,7 @@ _PERSISTED_KEYS = {
 
 def persist_settings(updates: dict[str, Any]) -> None:
     """Persist supported settings to the project-local .env file."""
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
     ENV_FILE.touch(exist_ok=True)
     for field, value in updates.items():
         env_key = _PERSISTED_KEYS.get(field)

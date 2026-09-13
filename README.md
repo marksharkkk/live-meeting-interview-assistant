@@ -2,6 +2,15 @@
 
 一个面向 Windows 的本地会议工作台：使用本地 faster-whisper 识别会议声音，实时显示中英字幕，可选生成实时/完整总结，并保留原来的面试回答辅助与知识库功能。
 
+个人用户可从 [Releases](https://github.com/marksharkkk/live-meeting-interview-assistant/releases) 下载 Windows ZIP 包，解压后运行 `MeetingAssistant.exe`。此版本无需安装 Node.js、Python、uv 或 Volta；首次语音识别仍需联网下载 Whisper 模型。开发者从源码运行则按下文安装依赖。
+
+**许可：** 本项目公开源码，但不是开放源代码许可。仅授权个人非商业使用未修改版本；修改、商用或再分发须先取得作者书面授权。详见 [LICENSE](./LICENSE)。版本变化见 [CHANGELOG](./CHANGELOG.md)。
+
+ZIP 发布版的用户数据在 `%APPDATA%\meeting-assistant\`（包括 `.env`、`meetings`、`knowledge_base`、`whisper_models`、`translation_models` 和 `logs`）；下文的项目内路径只适用于源码运行版。
+
+![设置窗口（空白示例配置）](./docs/screenshots/settings.png)
+![统一会议工作台（未开始录音）](./docs/screenshots/workspace.png)
+
 当前版本将“会议记录”和“面试/回答辅助”合并到同一场连续会话中：一次开始即可同时保存原始记录、翻译、音频和回答结果。
 
 第一次使用请先看：[会议通使用指南｜小白版](./会议通_使用指南.html)

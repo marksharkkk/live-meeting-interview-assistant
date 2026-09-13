@@ -11,7 +11,8 @@ from pathlib import Path
 
 class MeetingStore:
     def __init__(self, root=None):
-        self.root = Path(root or os.environ.get('MEETINGS_DIR', Path(__file__).parent / 'meetings'))
+        default_root = Path(os.environ.get('MEETING_ASSISTANT_DATA_DIR') or Path(__file__).parent) / 'meetings'
+        self.root = Path(root or os.environ.get('MEETINGS_DIR', default_root))
         self.lock = threading.RLock()
         self.active = None
         self.writer = None

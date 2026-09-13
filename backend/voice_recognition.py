@@ -1,4 +1,5 @@
 import logging
+import os
 import queue
 import threading
 from pathlib import Path
@@ -15,7 +16,7 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
-BASE_MODEL_DIR = Path(__file__).resolve().parent / "whisper_models" / "base"
+BASE_MODEL_DIR = Path(os.environ.get("MEETING_ASSISTANT_DATA_DIR") or Path(__file__).resolve().parent) / "whisper_models" / "base"
 SYSTEM_LOOPBACK_INDEX = -2
 
 
