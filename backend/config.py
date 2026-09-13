@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     knowledge_base_dir: Path = BACKEND_DIR / "knowledge_base"
     host: str = "127.0.0.1"
     port: int = 8000
-    voice_language: str = "zh-CN"
+    voice_language: str = "auto"
     voice_sample_rate: int = 16000
     voice_input_device: int = -1
 
@@ -50,4 +50,9 @@ def persist_settings(updates: dict[str, Any]) -> None:
             continue
         text_value = str(value).strip()
         set_key(str(ENV_FILE), env_key, text_value, quote_mode="always")
-        setattr(settings, field, text_value)
+        # Keep the in-memory settings type aligned with the Pydantic model.
+        # This matters for numeric settings changed from the main window.
+        if field == "voice_input_device":
+            setattr(settings, field, int(text_value))
+        else:
+            setattr(settings, field, text_value)

@@ -11,19 +11,21 @@ from urllib.parse import urlparse
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
 try:
     from .config import persist_settings, settings
     from .knowledge_base import KnowledgeBase
     from .llm_service import LLMService
+    from .meeting_store import MeetingStore
     from .security import MAX_UPLOAD_BYTES, safe_upload_path
     from .voice_recognition import VoiceRecognizer
 except ImportError:
     from config import persist_settings, settings
     from knowledge_base import KnowledgeBase
     from llm_service import LLMService
+    from meeting_store import MeetingStore
     from security import MAX_UPLOAD_BYTES, safe_upload_path
     from voice_recognition import VoiceRecognizer
 
@@ -37,17 +39,21 @@ voice_recognizer = VoiceRecognizer(
     sample_rate=settings.voice_sample_rate,
 )
 voice_recognizer.set_input_device(
-    None if settings.voice_input_device < 0 else settings.voice_input_device
+    None if settings.voice_input_device == -1 else settings.voice_input_device
 )
 llm_service = LLMService()
 knowledge_base = KnowledgeBase()
 voice_connection_lock = asyncio.Lock()
+meeting_store = MeetingStore()
+voice_recognizer.audio_callback = meeting_store.audio
+summary_lock = asyncio.Lock()
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     yield
     await asyncio.to_thread(voice_recognizer.cleanup)
+    meeting_store.close_audio()
 
 
 app = FastAPI(
@@ -90,6 +96,20 @@ class QuestionRequest(BaseModel):
     system_prompt: Optional[str] = Field(default=None, max_length=8000)
     conversation_history: list[ConversationMessage] = Field(default_factory=list, max_length=10)
     regenerate: bool = False
+    meeting_id: Optional[str] = Field(default=None, pattern=r'^[0-9a-f]{32}$')
+    source_at: Optional[str] = Field(default=None, max_length=80)
+    answer_language: Literal['auto', 'zh', 'en'] = 'auto'
+
+
+class TranslationRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    meeting_id: Optional[str] = Field(default=None, pattern=r'^[0-9a-f]{32}$')
+    source_at: Optional[str] = Field(default=None, max_length=80)
+    target: Literal['auto', 'zh', 'en'] = 'auto'
+    # Interim subtitle previews must not be written as if they were final
+    # translations.  The UI sets this false for previews and leaves the
+    # default true for the completed sentence.
+    persist: bool = True
 
 
 class SettingsUpdate(BaseModel):
@@ -97,7 +117,7 @@ class SettingsUpdate(BaseModel):
     openai_api_base: Optional[str] = Field(default=None, max_length=1000)
     openai_model: Optional[str] = Field(default=None, max_length=200)
     voice_language: Optional[str] = Field(default=None, max_length=20)
-    voice_input_device: Optional[int] = Field(default=None, ge=-1, le=1000)
+    voice_input_device: Optional[int] = Field(default=None, ge=-2, le=1000)
     clear_openai_api_key: bool = False
 
     @field_validator("openai_api_base")
@@ -152,14 +172,32 @@ async def websocket_voice(websocket: WebSocket):
         event_loop = asyncio.get_running_loop()
 
         def enqueue(message: dict) -> None:
+            if message.get('type') == 'transcript':
+                row = meeting_store.append(message['text'])
+                if row:
+                    message.update(source_id=row['id'], source_at=row['created_at'])
             event_loop.call_soon_threadsafe(transcript_queue.put_nowait, message)
 
+        def enqueue_transcript(text: str) -> None:
+            enqueue({'type': 'transcript', 'text': text, 'end_of_utterance': False})
+
+        def enqueue_boundary(text: str, end_of_utterance: bool) -> None:
+            # The recognition callback is queued before this metadata callback.
+            # Mark the matching latest item without changing the durable text.
+            event_loop.call_soon_threadsafe(
+                lambda: transcript_queue.put_nowait(
+                    {'type': 'transcript-boundary', 'end_of_utterance': end_of_utterance}
+                )
+            )
+
+        stop_requested = False
         try:
             await websocket.send_json({"type": "status", "message": "Loading speech model"})
             await asyncio.to_thread(
                 voice_recognizer.start_listening,
-                lambda text: enqueue({"type": "transcript", "text": text}),
+                enqueue_transcript,
                 lambda message: enqueue({"type": "error", "message": message}),
+                enqueue_boundary,
             )
             await websocket.send_json({"type": "status", "message": "Listening"})
 
@@ -172,25 +210,123 @@ async def websocket_voice(websocket: WebSocket):
                 )
                 for task in pending:
                     task.cancel()
+                await asyncio.gather(*pending, return_exceptions=True)
 
                 if queue_task in done:
                     message = queue_task.result()
                     await websocket.send_json(message)
                     if message.get("type") == "error":
                         break
-                else:
+                if receive_task in done:
                     message = json.loads(receive_task.result())
                     if message.get("type") == "stop":
-                        await websocket.send_json({"type": "stopped"})
+                        logger.info('Voice stop requested by client')
+                        stop_requested = True
                         break
         except Exception as exc:
             logger.info("Voice WebSocket closed: %s", exc)
         finally:
             await asyncio.to_thread(voice_recognizer.stop_listening)
+            meeting_store.close_audio()
             try:
+                # stop_listening() drains the recognizer queue.  Deliver every
+                # queued transcript before acknowledging stop, so interview
+                # mode can restart without losing the last spoken sentence.
+                while not transcript_queue.empty():
+                    message = await transcript_queue.get()
+                    await websocket.send_json(message)
+                if stop_requested:
+                    await websocket.send_json({"type": "stopped"})
                 await websocket.close()
             except Exception:
                 pass
+
+
+class MeetingStart(BaseModel):
+    title: str = Field(default='', max_length=200)
+    record_audio: bool = True
+
+
+@app.post('/api/meetings')
+async def start_meeting(request: MeetingStart):
+    if voice_connection_lock.locked():
+        raise HTTPException(409, '请先停止当前监听，再开始记录会议')
+    try:
+        return meeting_store.start(request.title, request.record_audio)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from None
+
+
+@app.get('/api/meetings')
+async def list_meetings():
+    return {'meetings': meeting_store.list(),
+            'active_id': meeting_store.active['id'] if meeting_store.active else None}
+
+
+@app.post('/api/meetings/finish')
+async def finish_meeting():
+    # The UI closes the voice socket first; wait for its final transcription drain.
+    async with voice_connection_lock:
+        try:
+            return meeting_store.finish()
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from None
+
+
+@app.post('/api/prepare-exit')
+async def prepare_exit():
+    await asyncio.to_thread(voice_recognizer.stop_listening)
+    meeting_store.close_audio()
+    if meeting_store.active:
+        meeting_store.finish()
+    return {'saved': True}
+
+
+def read_meeting(meeting_id):
+    try:
+        return meeting_store.read(meeting_id)
+    except (ValueError, FileNotFoundError):
+        raise HTTPException(404, '会议记录不存在') from None
+
+
+@app.get('/api/meetings/{meeting_id}')
+async def get_meeting(meeting_id: str):
+    return read_meeting(meeting_id)
+
+
+@app.post('/api/meetings/{meeting_id}/summary')
+async def summarize_meeting(meeting_id: str, live: bool = False):
+    if summary_lock.locked():
+        raise HTTPException(409, '总结正在生成，请稍后重试')
+    async with summary_lock:
+        record = read_meeting(meeting_id)
+        if not live and meeting_store.active and meeting_store.active['id'] == meeting_id:
+            raise HTTPException(409, '请先结束会议再生成完整总结')
+        try:
+            result = await llm_service.summarize_meeting(record['transcript'])
+        except RuntimeError as exc:
+            raise HTTPException(502, str(exc)) from None
+        name = 'live-summary' if live else 'summary'
+        path = meeting_store.directory(meeting_id) / f'{name}.txt'
+        path.write_text(result, encoding='utf-8')
+        source = {'source_at': record['entries'][-1]['created_at'] if record['entries'] else None,
+                  'source_characters': len(record['transcript'])}
+        path.with_suffix('.json').write_text(json.dumps(source), encoding='utf-8')
+        return {'summary': result, **source, 'live': live}
+
+
+@app.get('/api/meetings/{meeting_id}/files/{filename}')
+async def meeting_file(meeting_id: str, filename: str):
+    record = read_meeting(meeting_id)
+    allowed = {'transcript.txt', 'transcript.jsonl', 'summary.txt', 'live-summary.txt',
+               'translations.jsonl', 'answers.jsonl'}
+    allowed.update(track['file'] for track in record['tracks'])
+    if filename not in allowed:
+        raise HTTPException(404, '文件不存在')
+    path = meeting_store.directory(meeting_id) / filename
+    if not path.is_file():
+        raise HTTPException(404, '文件尚未生成')
+    return FileResponse(path, filename=filename)
 
 
 @app.post("/api/answer")
@@ -207,28 +343,60 @@ async def generate_answer(request: QuestionRequest):
         raise HTTPException(status_code=502, detail=str(exc)) from None
 
 
+@app.post("/api/translate")
+async def translate_subtitle(request: TranslationRequest):
+    if request.meeting_id:
+        read_meeting(request.meeting_id)
+    try:
+        translation = await llm_service.translate_text(request.text) if request.target == 'auto' else await llm_service.translate_text(request.text, request.target)
+        if request.meeting_id and request.persist:
+            meeting_store.append_artifact(request.meeting_id, 'translations', {
+                'original': request.text, 'translation': translation,
+                'source_at': request.source_at, 'target': request.target,
+            })
+        return {"translation": translation}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from None
+
+
 def _sse_event(event_type: str, **payload) -> str:
     return "data: " + json.dumps({"type": event_type, **payload}, ensure_ascii=False) + "\n\n"
 
 
 @app.post("/api/answer/stream")
 async def generate_answer_stream(request: QuestionRequest):
+    if request.meeting_id:
+        read_meeting(request.meeting_id)
     async def event_generator():
         context = await knowledge_base.query(request.question) if request.use_knowledge_base else ""
         history = [message.model_dump() for message in request.conversation_history]
         try:
+            answer = ''
+            language_prompt = {'auto': 'Reply in the same language as the question; for mixed language use its dominant language.',
+                               'zh': '请使用中文回答。', 'en': 'Reply in English.'}[request.answer_language]
             async for token in llm_service.generate_answer_stream(
                 question=request.question,
                 context=context,
-                system_prompt=request.system_prompt or "",
+                system_prompt=(request.system_prompt or "") + '\n' + language_prompt,
                 conversation_history=history,
                 temperature=1.1 if request.regenerate else 0.7,
             ):
+                answer += token
                 yield _sse_event("token", content=token)
                 await asyncio.sleep(0)
+            if not answer.strip():
+                raise RuntimeError('模型没有返回答案正文')
+            if request.meeting_id:
+                meeting_store.append_artifact(request.meeting_id, 'answers', {
+                    'question': request.question, 'answer': answer,
+                    'source_at': request.source_at, 'language': request.answer_language,
+                })
             yield _sse_event("done")
         except RuntimeError as exc:
             yield _sse_event("error", message=str(exc))
+        except Exception:
+            logger.exception('Answer generation or archive write failed')
+            yield _sse_event('error', message='答案生成或保存失败，请重试；原始记录已保留')
 
     return StreamingResponse(
         event_generator(),
@@ -369,7 +537,7 @@ async def update_settings(request: SettingsUpdate):
     llm_service.refresh_client()
     voice_recognizer.set_language(settings.voice_language)
     voice_recognizer.set_input_device(
-        None if settings.voice_input_device < 0 else settings.voice_input_device
+        None if settings.voice_input_device == -1 else settings.voice_input_device
     )
     return {"success": True, "message": "Settings saved"}
 

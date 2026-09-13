@@ -1,0 +1,38 @@
+body.workbench { background: #141428; }
+[hidden] { display: none !important; }
+.workbench button, .workbench select, .workbench input, .workbench textarea { font: inherit; font-size: 13px; }
+.workbench button:not(.control-btn):not(.section-action) { min-height: 36px; padding: 8px 12px; border: 1px solid #46516a; border-radius: 7px; color: #edf2fc; background: #232b40; cursor: pointer; white-space: normal; }
+.workbench button.primary { background: #224742; border-color: #439f97; }
+.workbench button:disabled { opacity: .45; cursor: default; }
+.workbench input:not([type=checkbox]), .workbench select, .workbench textarea { background: #161e30; color: #edf2fc; border: 1px solid #46516a; border-radius: 6px; padding: 8px; min-width: 0; }
+.workbench label { font-size: 13px; }
+.session-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.session-toolbar #meeting-title { flex: 1 1 160px; width: 180px; }
+.capture-settings { font-size: 12px; flex-shrink: 0; }
+.capture-settings summary { cursor: pointer; color: #b5c4db; }
+#capture-description { color: #8ca1bb; margin-left: 10px; }
+.language-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.language-controls label { display: flex; flex: 1 1 160px; flex-direction: column; gap: 4px; min-width: 0; }
+.capture-settings p, .meeting-panel p { color: #aab7cd; font-size: 12px; line-height: 1.6; margin: 8px 0; }
+.workbench #meeting-status { margin: 0; font-size: 12px; flex-shrink: 0; }
+.workbench .workspace-panels { grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr); }
+#ai-sidebar { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #111827; border: 1px solid #46516a; border-radius: 10px; overflow: hidden; padding: 14px; gap: 12px; }
+.workbench .meeting-panel { display: block; min-height: 0; overflow: auto; }
+.workbench .current-answer-section { border: none; padding: 0; background: none; overflow: auto; gap: 10px; }
+.workbench #question-draft { resize: vertical; min-height: 80px; width: 100%; flex-shrink: 0; }
+.answer-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.workbench .current-answer { min-height: 100px; flex: none; font-size: 17px; line-height: 1.7; white-space: pre-wrap; user-select: text; }
+.source-note, .workbench .answer-label { color: #8bd8da; font-size: 12px; overflow-wrap: anywhere; }
+.workbench #loading-overlay { position: static; background: none; padding: 0; font-size: 13px; color: #8bd8da; }
+.workbench #meeting-content { font-size: 14px; }
+body.workbench.transcript-focused #ai-sidebar { display: none; }
+body.workbench.transcript-focused .workspace-panels { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 859px) {
+  .workbench .workspace-panels { display: flex; flex-direction: column; overflow: auto; }
+  .workbench .workspace-panels .transcript-section { height: 340px; min-height: 340px; flex-shrink: 0; margin-top: 0; }
+  .workbench #ai-sidebar { min-height: 420px; flex-shrink: 0; overflow: visible; }
+  .workbench .current-answer-section { max-height: none; }
+  body.workbench.transcript-focused .workspace-panels { display: flex; }
+  body.workbench.transcript-focused .workspace-panels .transcript-section { flex: 1; min-height: 0; height: auto; }
+  .teleprompter-container { padding: 8px; gap: 8px; }
+}

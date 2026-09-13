@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>会议通使用指南｜小白版</title>
+  <style>
+    :root{color-scheme:light;--ink:#243348;--muted:#59677a;--accent:#146b64;--line:#dfe5ea}
+    *{box-sizing:border-box}
+    body{margin:0;background:#f3f5f7;color:var(--ink);font:17px/1.85 "Microsoft YaHei","PingFang SC",sans-serif}
+    main{max-width:960px;margin:32px auto;background:#fff;padding:48px 60px;border-radius:16px}
+    h1{font-size:34px;line-height:1.35;margin:12px 0}h2{font-size:25px;margin-top:48px;padding-bottom:10px;border-bottom:2px solid #dfeae8;scroll-margin-top:20px}
+    h3{font-size:20px;margin-top:28px}p{margin:12px 0}li{margin:8px 0}a{color:var(--accent);text-underline-offset:3px}
+    .lead{font-size:20px}.meta,small{color:var(--muted);font-size:14px}
+    .box{padding:18px 22px;background:#edf6f3;border-left:4px solid var(--accent);border-radius:5px;margin:22px 0}
+    .note{background:#fff7e9;border-left-color:#bd8631}nav{background:#f5f7fa;padding:18px 24px;border-radius:10px}nav a{display:inline-block;margin:4px 18px 4px 0}
+    table{border-collapse:collapse;width:100%;font-size:15px;margin:20px 0}th,td{border:1px solid var(--line);padding:11px 14px;text-align:left;vertical-align:top}th{background:#eff4f5}
+    code,kbd{font-family:inherit;background:#edf0f4;border-radius:4px;padding:2px 5px;overflow-wrap:anywhere}blockquote{margin:16px 0;padding:16px 22px;background:#f5f7fa;border-left:3px solid #8fa9b4}
+    .step{display:flex;gap:14px;align-items:flex-start;margin:16px 0}.num{flex:0 0 32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;text-align:center;line-height:32px;font-weight:bold}
+    footer{margin-top:48px;border-top:1px solid #ddd;padding-top:18px}.tablewrap{overflow:auto}
+    @media(max-width:650px){main{margin:0;padding:26px 20px;border-radius:0}body{font-size:16px}h1{font-size:28px}h2{font-size:23px}th,td{padding:9px;min-width:110px}}
+    @media print{body{background:#fff;font-size:11pt}main{margin:0;padding:0;max-width:none}nav{display:none}h2,h3{break-after:avoid}tr,.box,blockquote{break-inside:avoid}a{color:inherit}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="meta">Windows · 会议通 · 小白版</div>
+  <h1>会议通使用指南</h1>
+  <p class="lead">第一次使用也能照着做：把会议声音变成实时字幕，显示中英对照，保存原始记录，并按需生成总结或回答建议。</p>
+  <p>这份指南可以直接双击打开，不需要联网阅读。按 <kbd>Ctrl+P</kbd> 可以打印或另存为 PDF。第一次使用请先完成“试录一次”，确认设备和语言正确后再用于正式会议。</p>
+
+  <nav aria-label="目录">
+    <a href="#what">先看懂它能做什么</a><a href="#install">安装与启动</a><a href="#setup">第一次设置</a><a href="#knowledge">知识库</a>
+    <a href="#test">两分钟试录</a><a href="#meeting">日常会议</a><a href="#answer">回答辅助</a>
+    <a href="#save">记录、总结与文件</a><a href="#help">遇到问题</a>
+  </nav>
+
+  <h2 id="what">一、先看懂：会议通有四件事</h2>
+  <p><strong>先把声音变成文字，再对文字做翻译、总结或回答。</strong>这四件事可以同时存在，但不是同一个开关。</p>
+  <div class="tablewrap"><table>
+    <tr><th>功能</th><th>它做什么</th><th>是否必须联网</th></tr>
+    <tr><td><strong>实时字幕</strong></td><td>把麦克风、耳机或系统音频里的讲话识别成原文。</td><td>语音识别在本机运行；第一次准备模型需要等待。</td></tr>
+    <tr><td><strong>实时翻译</strong></td><td>在原文下面显示中文或英文译文。</td><td>安装本地 OPUS-MT 后可优先本地翻译；否则使用主界面配置的在线模型。</td></tr>
+    <tr><td><strong>会议记录与总结</strong></td><td>保存原始文字、可选原音频，并生成实时总结或结束后的完整总结。</td><td>总结需要调用主界面配置的 AI 服务。</td></tr>
+    <tr><td><strong>回答辅助</strong></td><td>根据最近字幕、选中的字幕或手动输入的问题生成可直接参考的回答。</td><td>需要 AI 服务；生成期间不会停止监听。</td></tr>
+    <tr><td><strong>知识库</strong></td><td>把你的简历、项目资料或会议材料提供给回答辅助作为参考。</td><td>文件在本机处理；生成回答仍需要 AI 服务。</td></tr>
+  </table></div>
+  <div class="box"><strong>最简单的使用流程：</strong>打开提词器 → 选择音源和语言 → 点击“开始” → 看实时字幕 → 需要时切换“回答辅助”或开启“实时总结” → 点击“结束并保存”。</div>
+
+  <h2 id="install">二、安装与启动</h2>
+  <h3>第一次安装</h3>
+  <div class="step"><div class="num">1</div><div>先安装两个小工具。<strong>uv</strong>负责按 <code>uv.lock</code> 创建项目自己的 Python <code>.venv</code>；<strong>Volta</strong>负责按 <code>package.json</code> 固定 Node.js、npm 版本。它们会帮助安装项目包，但本身不会自动安装；电脑已有就跳过。</div></div>
+  <pre><code>winget install --id=astral-sh.uv -e
+winget install Volta.Volta</code></pre>
+  <p>安装后请关闭并重新打开 PowerShell 或命令提示符，检查：</p>
+  <pre><code>uv --version
+volta --version</code></pre>
+  <div class="step"><div class="num">2</div><div>双击项目目录里的 <code>install.bat</code>。它会执行 <code>uv sync --locked</code> 和 Volta 管理的 <code>npm ci</code>，把 Python 和 Node 包安装到项目环境。首次安装时间可能比较长。</div></div>
+  <div class="step"><div class="num">3</div><div>安装完成后，双击 <code>start.bat</code>。桌面端会自动启动本地服务，不需要另外打开 Python 窗口。</div></div>
+  <p>项目目录通常是：</p>
+  <blockquote><code>&lt;项目目录&gt;</code></blockquote>
+  <div class="box note"><strong>如果窗口打不开：</strong>先关闭旧的会议通窗口；如果任务管理器里仍有旧的 <code>meeting-assistant</code> 或 Electron 进程，请结束旧进程后再双击 <code>start.bat</code>。第二次启动有可能只是唤醒旧版本，而不是加载刚更新的文件。</div>
+
+  <h2 id="setup">三、第一次设置</h2>
+  <h3>1. 配置 AI 服务</h3>
+  <p>打开设置窗口的“AI 大模型配置”，填写 API Base URL、模型名称和 API Key，然后点击“保存 API 设置”，再点击“测试连接”。</p>
+  <table><tr><th>服务</th><th>API Base URL 示例</th><th>模型示例</th></tr>
+    <tr><td>DeepSeek</td><td><code>https://api.deepseek.com/v1</code></td><td><code>deepseek-chat</code> 或账户中实际可用的模型</td></tr>
+    <tr><td>OpenAI 兼容服务</td><td>按服务商文档填写</td><td>按服务商文档填写</td></tr>
+  </table>
+  <p><strong>API Key 是私密凭证。</strong>不要把它发给别人，也不要上传到 GitHub。项目会把它保存在本机的 <code>backend\.env</code> 中。</p>
+
+  <h2 id="knowledge">知识库：给回答辅助提供参考资料</h2>
+  <p>知识库功能已经兼容当前统一工作台，但它只影响<strong>回答辅助</strong>：不会改变实时语音识别、字幕翻译，也不会自动加入会议总结。</p>
+  <ol>
+    <li>打开主界面的设置窗口，在<strong>“知识库管理”</strong>区域选择 PDF、TXT 或 DOCX 文件。</li>
+    <li>点击<strong>“上传到知识库”</strong>，等待文件显示“已加载”。也可以把一段资料粘贴到“直接添加文本”中。</li>
+    <li>打开提词器的<strong>“回答辅助”</strong>，直接提问即可；当前回答辅助默认会查询知识库，再把相关内容交给 AI 参考。</li>
+  </ol>
+  <table><tr><th>按钮</th><th>作用</th></tr>
+    <tr><td>刷新列表</td><td>重新查看文件和已加载的文本块数量。</td></tr>
+    <tr><td>重新加载未加载文件</td><td>文件还在但状态显示未加载时使用。</td></tr>
+    <tr><td>清理无效缓存</td><td>文件被 Windows 资源管理器移走或删除后，清理旧记录。</td></tr>
+    <tr><td>清空知识库</td><td>删除知识库中的上传文件和索引缓存；操作前请确认已经备份。</td></tr>
+  </table>
+  <p>单个文件上限为 25 MB。知识库文件保存在项目的 <code>backend\knowledge_base\uploads</code>，索引缓存保存在同一目录；这些内容属于本机资料，不要上传到 GitHub。</p>
+
+  <h3>3. 选择音频来源：你想听谁，就选择谁的声音所在设备</h3>
+  <p>打开提词器后，展开<strong>“音源与语言”</strong>。最容易混淆的是音源选择：</p>
+  <table><tr><th>你想识别的声音</th><th>建议选择</th><th>说明</th></tr>
+    <tr><td>线上会议对方的声音</td><td><strong>自动（系统音频回环）</strong>，或选择当前耳机/扬声器的系统回环设备</td><td>它读取电脑正在播放的声音。戴耳机时通常应选耳机对应的系统输出，不是耳机麦克风。</td></tr>
+    <tr><td>你自己说的话</td><td>选择实际使用的麦克风</td><td>可以是笔记本内置麦克风、耳机麦克风或外接麦克风。</td></tr>
+    <tr><td>只想识别对方，不想识别自己</td><td>选择系统音频回环</td><td>建议线上会议戴耳机，减少回声和重复识别。</td></tr>
+  </table>
+  <p>如果设备列表里出现很多名称，不要只看“耳机”三个字：先确认会议软件把声音播放到哪一个设备，再选同一个输出。<strong>立体声混音</strong>不是首选；优先使用“系统音频回环”。</p>
+
+  <h3>4. 选择识别语言和翻译目标</h3>
+  <table><tr><th>设置</th><th>怎么选</th></tr>
+    <tr><td><strong>识别语言</strong></td><td>中文、英文、中英混用或不确定时选“自动检测”；整场只有一种语言时可以手动选择。</td></tr>
+    <tr><td><strong>字幕翻译</strong></td><td>“中英互译”适合一般场景；也可以固定“翻成中文”“翻成英文”，或选择“关闭翻译”。连续讲话时会先显示可替换的实时预览，完整句结束后才保存最终译文。</td></tr>
+    <tr><td><strong>回答语言</strong></td><td>在“回答辅助”中选择“跟随问题”、中文或英文；它只影响 AI 回答，不改变字幕识别。</td></tr>
+  </table>
+  <div class="box">识别语言、翻译目标、回答语言是三件不同的事。例如：对方说英语 → 识别语言选自动 → 字幕翻译选翻成中文 → 回答语言选英文，就能看到英文原文和中文译文，同时生成英文回答建议。</div>
+
+  <h2 id="test">四、先试录两分钟</h2>
+  <ol>
+    <li>打开提词器，展开“音源与语言”，确认音源和语言。</li>
+    <li>填写一个测试名称，确认“保存音频”是否勾选，然后点击<strong>“开始”</strong>。</li>
+    <li>让会议软件播放一段清楚的中文或英文讲话，观察左侧是否出现<strong>原文</strong>。</li>
+    <li>先看原文，再看下面的实时译文预览；它可能随着讲话继续被替换。完整一句结束后，最终译文才会保存到本场记录。</li>
+    <li>点击“暂停”，确认可以暂停；再点击“继续”，确认仍然是同一场记录。</li>
+    <li>点击“结束并保存”，然后在右侧场次列表中查看原始记录和中英对照。</li>
+  </ol>
+  <div class="box note"><strong>试录通过标准：</strong>对方讲话时能出现原文；原文语言基本正确；翻译能出现；暂停/继续不丢记录；结束后能在历史场次中找到这次记录。全部通过后再用于正式会议。</div>
+
+  <h2 id="meeting">五、日常会议怎么用</h2>
+  <h3>开始前</h3>
+  <ol><li>先打开腾讯会议、Teams、Zoom、飞书等会议软件，再打开会议通。</li><li>戴好耳机，确认对方声音确实从该耳机播放。</li><li>打开提词器，填写会议名称，选择是否保存音频。</li><li>点击“开始”，看到“监听中”后再开始正式讨论。</li></ol>
+  <h3>会议中</h3>
+  <table><tr><th>按钮/区域</th><th>用途</th></tr>
+    <tr><td><strong>暂停 / 继续</strong></td><td>暂停或恢复当前会话，不会新建场次。</td></tr>
+    <tr><td><strong>实时总结</strong></td><td>勾选后大约每分钟根据截至当时的全部原始记录生成一次总结，默认关闭。</td></tr>
+    <tr><td><strong>总结 / 回答辅助</strong></td><td>切换右侧工具。切换视图不会停止监听。</td></tr>
+    <tr><td><strong>展开实时字幕</strong></td><td>隐藏 AI 侧栏，让字幕占满主要区域；再次点击可恢复。</td></tr>
+    <tr><td><strong>清空字幕显示</strong></td><td>只清理当前屏幕，不删除本场原始记录、音频或答案。</td></tr>
+  </table>
+  <h3>结束后</h3>
+  <p>点击<strong>“结束并保存”</strong>，等待最后一段字幕收齐。结束后可以生成完整总结，并查看：</p>
+  <ul><li>原始记录：未经字幕显示编辑的完整识别结果；</li><li>中英对照：本场已完成的原文与译文；</li><li>本场问答：本场生成过的 AI 问题和答案；</li><li>完整总结：基于全部原始记录生成的总结。</li></ul>
+
+  <h2 id="answer">六、回答辅助怎么用</h2>
+  <p>回答辅助保留了原来的面试功能，但它现在属于同一场会议。生成答案时，会议仍然继续监听。</p>
+  <ol>
+    <li>在右侧点击<strong>“回答辅助”</strong>。</li>
+    <li>如果字幕中有完整问题，可以点击“提取最近问题”；也可以在字幕中选中文字后点击“使用选中字幕”。</li>
+    <li>必要时直接在“本次问题”文本框中修改问题。</li>
+    <li>选择回答语言，点击<strong>“生成答案”</strong>。</li>
+    <li>如果答案不合适，点击“重新生成”。答案会保存到本场问答。</li>
+  </ol>
+  <div class="box note"><strong>重要：</strong>AI 答案是参考建议，不是事实核验结果。面试时只使用自己的真实经历；正式会议中的敏感内容也应先确认是否允许使用 AI。</div>
+
+  <h2 id="save">七、保存位置与 GitHub 安全</h2>
+  <p>项目根目录是：</p>
+  <blockquote><code>&lt;项目目录&gt;</code></blockquote>
+  <table><tr><th>内容</th><th>保存位置</th></tr>
+    <tr><td>API Key 和本机配置</td><td><code>backend\.env</code></td></tr>
+    <tr><td>会议元信息、原始记录、翻译、回答和总结</td><td><code>backend\meetings\&lt;会议ID&gt;\</code></td></tr>
+    <tr><td>原始音频</td><td>同一场次目录内的 <code>audio-*.wav</code></td></tr>
+    <tr><td>Whisper 识别模型</td><td><code>backend\whisper_models\</code></td></tr>
+    <tr><td>OPUS-MT 翻译模型</td><td><code>backend\translation_models\</code></td></tr>
+    <tr><td>知识库原文和缓存</td><td><code>backend\knowledge_base\</code></td></tr>
+    <tr><td>桌面端日志</td><td><code>logs\desktop.log</code></td></tr>
+  </table>
+  <p>发布到 GitHub 时，真实 API Key、会议录音、会议文字、知识库原文和模型文件都不要上传。项目中的 <code>.gitignore</code> 已经排除这些内容；公开仓库只保留 <code>backend\.env.example</code>。</p>
+
+  <h2 id="keys">八、快捷键和窗口按钮</h2>
+  <table><tr><th>操作</th><th>作用</th></tr>
+    <tr><td>顶部盾牌按钮 / <kbd>Ctrl+H</kbd></td><td>隐私模式：隐藏相关窗口并启用系统内容保护，再次操作可恢复。</td></tr>
+    <tr><td>最小化按钮</td><td>普通最小化，窗口会保留在任务栏，不等于隐私模式。</td></tr>
+    <tr><td>展开字幕按钮</td><td>让实时字幕占满主要区域；再次点击恢复 AI 侧栏。</td></tr>
+    <tr><td><kbd>Ctrl+Shift+M</kbd></td><td>最小化或恢复设置窗口。</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>保存当前记录并彻底退出程序。正式会议中不要误触。</td></tr>
+  </table>
+
+  <h2 id="help">九、常见问题</h2>
+  <div class="tablewrap"><table>
+    <tr><th>现象</th><th>先这样检查</th></tr>
+    <tr><td>提词器打不开或没有窗口</td><td>先彻底结束旧的会议通/Electron 进程，再双击 <code>start.bat</code>；不要同时启动多个旧版本。若仍失败，查看 <code>logs\desktop.log</code>。</td></tr>
+    <tr><td>戴耳机但识别不到对方</td><td>音源选择系统音频回环或耳机输出，不要选择耳机麦克风；先播放一段会议声音测试。</td></tr>
+    <tr><td>出现 Unanticipated host error</td><td>暂停监听，换成“自动（系统音频回环）”或重新选择可用设备；关闭其他占用音频设备的软件后重试。</td></tr>
+    <tr><td>有声音但没有文字</td><td>确认状态显示“监听中”，确认音量确实从所选设备播放，并选择自动检测或正确语言。</td></tr>
+    <tr><td>中英文混用识别不准</td><td>识别语言选“自动检测”。如果整段语言固定，再手动选择中文或英文；重要人名、数字和结论要人工核对。</td></tr>
+    <tr><td>一直显示“翻译中”</td><td>先看原文是否完整出现。翻译按完整句发送；检查 API 配置，或在字幕设置中暂时关闭翻译确认识别本身正常。</td></tr>
+    <tr><td>答案显示“已生成”但看不到</td><td>打开“回答辅助”侧栏；如果当前是字幕全屏模式，点击“显示 AI 侧栏”。</td></tr>
+    <tr><td>没有完整总结</td><td>先结束并保存本场记录，再检查 AI 模型配置和 API 余额，最后点击“生成完整总结”。</td></tr>
+    <tr><td>没有录音</td><td>开始前勾选“保存音频”。已经结束的会议不能凭空补回开始前没有保存的声音。</td></tr>
+  </table></div>
+  <div class="box"><strong>每天只记住三件事：</strong><br>1. 选对音源；2. 开始后确认原文出现；3. 结束时点击“结束并保存”。</div>
+
+  <footer><p class="meta">这份指南对应会议通当前统一工作台版本。界面更新后，按钮文字可能略有变化，但“先选音源 → 试录 → 开始 → 结束并保存”的基本流程不变。</p></footer>
+</main>
+</body>
+</html>

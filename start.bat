@@ -8,11 +8,13 @@ if not exist ".venv\Scripts\python.exe" (
   exit /b 1
 )
 
-if not exist "%ProgramFiles%\Volta\npm.cmd" (
+set "VOLTA_EXE="
+for /f "delims=" %%I in ('where volta 2^>nul') do if not defined VOLTA_EXE set "VOLTA_EXE=%%I"
+if not defined VOLTA_EXE (
   echo Volta is missing. Run install.bat after installing Volta.
   pause
   exit /b 1
 )
 
-call "%ProgramFiles%\Volta\npm.cmd" start
+"%VOLTA_EXE%" run npm start
 if errorlevel 1 pause

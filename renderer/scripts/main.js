@@ -78,7 +78,7 @@ async function loadSettings() {
       : '输入您的 API Key';
     elements.apiBase.value = settings.openai_api_base || '';
     elements.model.value = settings.openai_model || '';
-    elements.voiceLanguage.value = settings.voice_language || 'zh-CN';
+    elements.voiceLanguage.value = settings.voice_language || 'auto';
     await loadAudioDevices(settings.voice_input_device ?? -1);
   } catch (error) {
     showNotification(`设置加载失败：${error.message}`, true);

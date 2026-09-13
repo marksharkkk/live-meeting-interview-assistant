@@ -18,7 +18,9 @@ if not defined UV_EXE (
   exit /b 1
 )
 
-if not exist "%ProgramFiles%\Volta\npm.cmd" (
+set "VOLTA_EXE="
+for /f "delims=" %%I in ('where volta 2^>nul') do if not defined VOLTA_EXE set "VOLTA_EXE=%%I"
+if not defined VOLTA_EXE (
   echo ERROR: Volta is not installed. Install it with: winget install Volta.Volta
   pause
   exit /b 1
@@ -31,7 +33,7 @@ if errorlevel 1 goto :failed
 
 echo.
 echo Restoring locked Node.js dependencies...
-call "%ProgramFiles%\Volta\npm.cmd" ci
+"%VOLTA_EXE%" run npm ci
 if errorlevel 1 goto :failed
 
 echo.

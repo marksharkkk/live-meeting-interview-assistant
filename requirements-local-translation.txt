@@ -1,0 +1,4 @@
+# Opt-in, project-local OPUS-MT subtitle translation runtime.
+# The model archives are downloaded and converted separately by the setup script.
+ctranslate2>=4.8,<5
+sentencepiece>=0.2,<1
