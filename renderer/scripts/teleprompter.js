@@ -45,6 +45,9 @@ let translationWorkerRunning = false;
 let translationGeneration = 0;
 let pendingSentence = null;
 let translationPreviewTimer = null;
+// A long uninterrupted speaker must not keep one ever-growing translation
+// request alive.  Each bounded segment is saved separately; raw STT stays whole.
+const MAX_TRANSLATION_CHARS = 200;
 let stopPromise = null;
 let stopSocket = null;
 let activeMeetingId = null;
@@ -145,9 +148,37 @@ function finalizePendingSentence() {
   });
 }
 
+function splitLongTranscriptChunk(text) {
+  const pieces = [];
+  let remaining = text;
+  while (remaining.length > MAX_TRANSLATION_CHARS) {
+    const head = remaining.slice(0, MAX_TRANSLATION_CHARS);
+    const punctuation = Math.max(...['.', '!', '?', '。', '！', '？'].map(mark => head.lastIndexOf(mark)));
+    const whitespace = head.lastIndexOf(' ');
+    const cut = punctuation >= MAX_TRANSLATION_CHARS / 2 ? punctuation + 1
+      : whitespace >= MAX_TRANSLATION_CHARS / 2 ? whitespace : MAX_TRANSLATION_CHARS;
+    pieces.push(remaining.slice(0, cut).trim());
+    remaining = remaining.slice(cut).trim();
+  }
+  if (remaining) pieces.push(remaining);
+  return pieces;
+}
+
 function appendTranscriptChunk(text) {
   const chunk = String(text || '').trim();
   if (!chunk) return;
+  for (const piece of splitLongTranscriptChunk(chunk)) {
+    if (pendingSentence && joinTranscriptText(pendingSentence.text, piece).length > MAX_TRANSLATION_CHARS) {
+      finalizePendingSentence();
+    }
+    appendTranscriptPart(piece);
+    if (/[.!?。！？]["'”’)]*$/.test(piece) || pendingSentence?.text.length >= MAX_TRANSLATION_CHARS) {
+      finalizePendingSentence();
+    }
+  }
+}
+
+function appendTranscriptPart(chunk) {
   if (!pendingSentence) {
     const rendered = addTranscript(chunk, true);
     pendingSentence = {
@@ -190,6 +221,7 @@ function scheduleTranslationPreview(sentence) {
     return;
   }
   sentence.translationVersion += 1;
+  translationQueue = translationQueue.filter(task => task.final || task.sentence !== sentence);
   const version = sentence.translationVersion;
   sentence.rendered.translationElement.textContent = '实时翻译中…';
   sentence.rendered.translationElement.classList.add('pending');

@@ -1,8 +1,6 @@
 import logging
-import os
 import queue
 import threading
-from pathlib import Path
 from typing import Callable, Optional
 
 import numpy as np
@@ -11,12 +9,13 @@ from pyaudio import PyAudio, paInt16
 
 try:
     from .wasapi_loopback import WasapiLoopback
+    from .speech_model import speech_model
 except ImportError:
     from wasapi_loopback import WasapiLoopback
+    from speech_model import speech_model
 
 
 logger = logging.getLogger(__name__)
-BASE_MODEL_DIR = Path(os.environ.get("MEETING_ASSISTANT_DATA_DIR") or Path(__file__).resolve().parent) / "whisper_models" / "base"
 SYSTEM_LOOPBACK_INDEX = -2
 
 
@@ -165,16 +164,11 @@ class VoiceRecognizer:
         if self._whisper_model is not None:
             return
         from faster_whisper import WhisperModel
-        from faster_whisper.utils import download_model
-
-        if not (BASE_MODEL_DIR / "model.bin").is_file():
-            BASE_MODEL_DIR.mkdir(parents=True, exist_ok=True)
-            logger.info("Downloading Whisper base model into the project")
-            download_model("base", output_dir=str(BASE_MODEL_DIR))
+        speech_model.require_ready()
 
         logger.info("Loading project-local Whisper base model")
         self._whisper_model = WhisperModel(
-            str(BASE_MODEL_DIR),
+            str(speech_model.model_dir),
             device="cpu",
             compute_type="int8",
         )

@@ -87,9 +87,10 @@
         <div class="voice-info">
           <p>💡 中英文交替或不确定语言时，选择“自动检测”；每段音频会重新判断语言。已知全程单一语言时可手动指定。</p>
           <p>💡 对方声音请选择“系统音频回环”；它直接读取当前耳机/扬声器输出，不依赖“立体声混音”。</p>
-          <p>💡 语音识别使用项目内置的 faster-whisper，本地离线运行。</p>
-          <p>💡 首次监听会准备项目目录中的 base 模型，之后直接复用。</p>
+          <p>💡 语音识别在本机运行；首次使用须联网下载 Whisper base 模型，之后可离线识别。</p>
         </div>
+        <div id="speech-model-status" class="model-status" role="status" aria-live="polite">正在检查语音识别模型…</div>
+        <button id="download-speech-model" class="btn btn-secondary" type="button" disabled>下载语音识别模型</button>
         <button id="save-voice-settings" class="btn btn-primary">保存语音设置</button>
       </section>
 

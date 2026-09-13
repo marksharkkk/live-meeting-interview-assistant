@@ -2,11 +2,11 @@
 
 一个面向 Windows 的本地会议工作台：使用本地 faster-whisper 识别会议声音，实时显示中英字幕，可选生成实时/完整总结，并保留原来的面试回答辅助与知识库功能。
 
-个人用户可从 [Releases](https://github.com/marksharkkk/live-meeting-interview-assistant/releases) 下载 Windows ZIP 包，解压后运行 `MeetingAssistant.exe`。此版本无需安装 Node.js、Python、uv 或 Volta；首次语音识别仍需联网下载 Whisper 模型。开发者从源码运行则按下文安装依赖。
+Windows ZIP 包发布后，个人用户可从 [Releases](https://github.com/marksharkkk/live-meeting-interview-assistant/releases) 下载，解压后运行 `MeetingAssistant.exe`。如果页面没有 ZIP 附件，说明下载版尚未发布，请不要把 GitHub 自动生成的“Source code”压缩包当成免安装版。下载版无需安装 Node.js、Python、uv 或 Volta；首次使用请在主界面“语音识别设置”点击“下载语音识别模型”，看到“已就绪”后再开始监听。之后可离线识别。开发者从源码运行则按下文安装依赖。
 
 **许可：** 本项目公开源码，但不是开放源代码许可。仅授权个人非商业使用未修改版本；修改、商用或再分发须先取得作者书面授权。详见 [LICENSE](./LICENSE)。版本变化见 [CHANGELOG](./CHANGELOG.md)。
 
-ZIP 发布版的用户数据在 `%APPDATA%\meeting-assistant\`（包括 `.env`、`meetings`、`knowledge_base`、`whisper_models`、`translation_models` 和 `logs`）；下文的项目内路径只适用于源码运行版。
+ZIP 发布版的用户数据在 `%APPDATA%\meeting-assistant\`（包括 `.env`、`meetings`、`knowledge_base`、`whisper_models` 和 `logs`）；英译中模型随程序放在解压目录，可选的自装模型放在用户数据目录的 `translation_models`。下文的项目内路径只适用于源码运行版。
 
 ![设置窗口（空白示例配置）](./docs/screenshots/settings.png)
 ![统一会议工作台（未开始录音）](./docs/screenshots/workspace.png)
@@ -53,8 +53,8 @@ ZIP 发布版的用户数据在 `%APPDATA%\meeting-assistant\`（包括 `.env`�
 ### 7. 双语实时字幕
 - 原文先显示，译文随后显示，适合会议中的双语对照
 - 连续讲话时会先显示可替换的“实时预览译文”；检测到完整句尾后才固化最终译文，避免把半句话误译后写入记录
-- 可选使用项目内的 OPUS-MT 中英本地模型，降低延迟并减少在线翻译请求
-- 未安装本地模型时自动回退到当前配置的大模型翻译
+- Windows 下载版已内置英译中 OPUS-MT 模型，本地翻译优先；源码版可按下文自行安装
+- 中文译英文目前没有内置本地模型；本地模型缺失或失败时才回退到当前配置的大模型翻译
 
 ## 技术架构
 
@@ -72,7 +72,7 @@ ZIP 发布版的用户数据在 `%APPDATA%\meeting-assistant\`（包括 `.env`�
 - 上传文件限制为 PDF、TXT、DOCX，单个文件最大 25 MB
 - Electron 渲染页面禁用 Node 集成，并启用内容安全策略
 - API Key 只写入项目本地的 `backend/.env`，界面不会回显密钥
-- Whisper 模型保存在 `backend/whisper_models/base`，不占用用户级模型缓存
+- 在主界面点击“下载语音识别模型”后，Whisper 模型保存在 `backend/whisper_models/base`，不占用用户级模型缓存
 
 ## 数据位置与 GitHub 安全
 
@@ -221,7 +221,7 @@ volta run npm start
 ## 注意事项
 
 - 请确保 API Key 有效且余额充足
-- 首次启动需等待本地服务就绪；首次监听会准备项目目录中的 Whisper base 模型
+- 首次启动需等待本地服务就绪；首次监听前需在主界面点击下载 Whisper base 模型，并等待显示“已就绪”
 - 提词器窗口为不透明置顶工作台，请合理摆放位置
 - 本软件仅用于辅助会议，请合理使用
 

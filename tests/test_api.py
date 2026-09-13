@@ -132,6 +132,19 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "ok")
 
+    def test_speech_model_has_visible_status_and_explicit_download_route(self):
+        class Model:
+            def status(self):
+                return {"state": "missing", "message": "请点击下载"}
+
+            def start_download(self):
+                return {"state": "downloading", "message": "正在下载"}
+
+        with patch.object(backend_main, "speech_model", Model()):
+            self.assertEqual(self.client.get("/api/speech-model").status_code, 401)
+            self.assertEqual(self.client.get("/api/speech-model", headers=self.headers).json()["state"], "missing")
+            self.assertEqual(self.client.post("/api/speech-model/download", headers=self.headers).json()["state"], "downloading")
+
     def test_settings_do_not_return_api_key(self):
         response = self.client.get("/api/settings", headers=self.headers)
         self.assertEqual(response.status_code, 200)

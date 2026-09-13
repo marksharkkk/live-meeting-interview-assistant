@@ -1,11 +1,12 @@
 param(
-    [string]$Version = '1.0.0',
+    [string]$Version = '0.0.1',
+    [string]$OutputDirectory = 'dist',
     [switch]$Resume
 )
 
 $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$stage = Join-Path $project "dist\MeetingAssistant-$Version-win-x64"
+$stage = Join-Path (Join-Path $project $OutputDirectory) "MeetingAssistant-$Version-win-x64"
 $zip = "$stage.zip"
 
 if ((Test-Path -LiteralPath $zip) -or ((Test-Path -LiteralPath $stage) -and -not $Resume)) {
@@ -38,6 +39,16 @@ function Copy-Tree([string]$Source, [string]$Destination) {
 $app = Join-Path $stage 'resources\app'
 $runtime = Join-Path $app 'runtime'
 $python = Join-Path $runtime 'python'
+$model = Join-Path $project 'backend\translation_models\opus-mt-en-zh'
+if (-not (Test-Path -LiteralPath (Join-Path $model 'model.bin'))) {
+    & (Join-Path $project 'scripts\setup_local_translation.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'Could not prepare the local translation model.' }
+}
+foreach ($file in @('model.bin', 'source.spm', 'target.spm', 'config.json', 'shared_vocabulary.json')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $model $file))) {
+        throw "Required offline translation model file is missing: $file"
+    }
+}
 if (-not $Resume) {
     New-Item -ItemType Directory -Path $stage -Force | Out-Null
     Copy-Tree $electron $stage
@@ -46,7 +57,7 @@ if (-not $Resume) {
     foreach ($file in @('main.js', 'preload.js', 'package.json', 'LICENSE', 'README.md', 'CHANGELOG.md')) {
         Copy-Item -LiteralPath (Join-Path $project $file) -Destination $app
     }
-    $guide = Get-ChildItem -LiteralPath $project -File -Filter '*指南.html' | Select-Object -First 1
+    $guide = Get-ChildItem -LiteralPath $project -File -Filter '*.html' | Select-Object -First 1
     if ($guide) { Copy-Item -LiteralPath $guide.FullName -Destination $app }
     Copy-Tree (Join-Path $project 'renderer') (Join-Path $app 'renderer')
     Copy-Tree (Join-Path $project 'docs') (Join-Path $app 'docs')
@@ -61,6 +72,15 @@ if (-not $Resume) {
     Copy-Tree (Join-Path $pythonHome 'Lib') (Join-Path $python 'Lib')
     Copy-Tree (Join-Path $venv 'Lib\site-packages') (Join-Path $runtime 'site-packages')
 }
+foreach ($file in @('main.js', 'preload.js', 'package.json', 'LICENSE', 'README.md', 'CHANGELOG.md', 'THIRD_PARTY_MODELS.md')) {
+    Copy-Item -LiteralPath (Join-Path $project $file) -Destination $app -Force
+}
+$guide = Get-ChildItem -LiteralPath $project -File -Filter '*.html' | Select-Object -First 1
+if ($guide) { Copy-Item -LiteralPath $guide.FullName -Destination $app -Force }
+Copy-Item -Path (Join-Path $project 'backend\*.py') -Destination (Join-Path $app 'backend') -Force
+Copy-Tree (Join-Path $project 'renderer') (Join-Path $app 'renderer')
+Copy-Tree (Join-Path $project 'docs') (Join-Path $app 'docs')
+Copy-Tree $model (Join-Path $app 'backend\translation_models\opus-mt-en-zh')
 
 $env:PYTHONHOME = $python
 $env:PYTHONPATH = Join-Path $runtime 'site-packages'
@@ -68,9 +88,11 @@ $env:PYTHONNOUSERSITE = '1'
 $smokeData = Join-Path $project 'dist\smoke-data'
 $env:MEETING_ASSISTANT_DATA_DIR = $smokeData
 try {
-    & (Join-Path $python 'python.exe') -c 'import fastapi, pyaudio, faster_whisper, ctranslate2, sentencepiece; from backend.main import app; print(12345)'
+    Push-Location $app
+    & (Join-Path $python 'python.exe') -c 'import fastapi, pyaudio, faster_whisper, ctranslate2, sentencepiece; from backend.main import app; from backend.local_translation import LocalTranslationService; assert LocalTranslationService().translate(chr(72)+chr(101)+chr(108)+chr(108)+chr(111)); print(12345)'
     if ($LASTEXITCODE -ne 0) { throw 'Bundled Python backend smoke test failed.' }
 } finally {
+    Pop-Location
     Remove-Item Env:\PYTHONHOME -ErrorAction SilentlyContinue
     Remove-Item Env:\PYTHONPATH -ErrorAction SilentlyContinue
     Remove-Item Env:\PYTHONNOUSERSITE -ErrorAction SilentlyContinue

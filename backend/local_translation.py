@@ -9,7 +9,8 @@ from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
-TRANSLATION_MODELS_DIR = Path(os.environ.get("MEETING_ASSISTANT_DATA_DIR") or Path(__file__).resolve().parent) / "translation_models"
+PACKAGE_MODELS_DIR = Path(__file__).resolve().parent / "translation_models"
+USER_MODELS_DIR = Path(os.environ.get("MEETING_ASSISTANT_DATA_DIR") or Path(__file__).resolve().parent) / "translation_models"
 
 try:
     import ctranslate2
@@ -45,7 +46,7 @@ class LocalTranslationService:
         ("zh", "en"): "opus-mt-zh-en",
         ("en", "zh"): "opus-mt-en-zh",
     }
-    _TARGET_PREFIXES = {("en", "zh"): ">>zho<<"}
+    _TARGET_PREFIXES = {("en", "zh"): ">>cmn_Hans<<"}
 
     def __init__(self):
         self._models: dict[tuple[str, str], tuple[object, object, object]] = {}
@@ -61,7 +62,11 @@ class LocalTranslationService:
 
     @classmethod
     def _model_dir(cls, source: str, target: str) -> Path:
-        return TRANSLATION_MODELS_DIR / cls._MODEL_NAMES[(source, target)]
+        name = cls._MODEL_NAMES[(source, target)]
+        user_model = USER_MODELS_DIR / name
+        if all((user_model / filename).is_file() for filename in ("model.bin", "source.spm", "target.spm")):
+            return user_model
+        return PACKAGE_MODELS_DIR / name
 
     def _load_model(self, source: str, target: str):
         key = (source, target)

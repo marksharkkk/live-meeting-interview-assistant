@@ -20,6 +20,12 @@ app.whenReady().then(async () => {
     await run("document.getElementById('meeting-start').click()");
     await waitFor('isListening && __flow.translations.length > 0');
     await check("__flow.sessions.length === 1 && __flow.previewTranslations.length > 0 && __flow.translations[0].text === 'This is a complete sentence.'", 'Preview is replaceable and only the complete sentence is saved as translation');
+    await run("Array.from({length: 9}, (_, i) => `Continuous speech block ${i} contains an important idea without a pause`).forEach(text => __flow.sockets[0].emit({type: 'transcript', text})); __flow.sockets[0].emit({type: 'transcript-boundary', end_of_utterance: true})");
+    await waitFor("__flow.translations.slice(1).map(row => row.text).join(' ').includes('block 8')");
+    await check("__flow.translations.slice(1).length >= 3 && __flow.translations.slice(1).every(row => row.text.length <= MAX_TRANSLATION_CHARS) && __flow.translations.slice(1).map(row => row.text).join(' ').includes('block 0') && __flow.sessions[0].transcript.includes('block 8')", 'Continuous speech is translated in bounded sequential parts without dropping original words');
+    await run("__flow.sockets[0].emit({type: 'transcript', text: Array.from({length: 20}, (_, i) => `very long recognition part ${i}`).join(' ')}); __flow.sockets[0].emit({type: 'transcript-boundary', end_of_utterance: true})");
+    await waitFor("__flow.translations.map(row => row.text).join(' ').includes('part 19')");
+    await check("__flow.translations.every(row => row.text.length <= MAX_TRANSLATION_CHARS)", 'One long recognition chunk is split before translation');
     await run("setWorkspaceView('interview'); document.getElementById('question-draft').value = 'What is your experience?'; setTranscriptFocused(true); generateAnswer()");
     await check("isListening && __flow.stopCount === 0 && transcriptChunks.some(row => row.text.includes('New speech'))", 'AI receives new speech without stopping recording');
     await check("isTranscriptFocused && elements.currentAnswer.textContent === 'This is the visible answer.'", 'Answer remains available without interrupting fullscreen subtitles');

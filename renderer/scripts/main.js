@@ -18,6 +18,8 @@ const elements = {
   kbFileList: document.getElementById('kb-file-list'),
   voiceDevice: document.getElementById('voice-device'),
   voiceLanguage: document.getElementById('voice-language'),
+  speechModelStatus: document.getElementById('speech-model-status'),
+  downloadSpeechModel: document.getElementById('download-speech-model'),
   saveVoiceSettings: document.getElementById('save-voice-settings'),
   showTeleprompter: document.getElementById('show-teleprompter'),
   notification: document.getElementById('notification'),
@@ -25,6 +27,7 @@ const elements = {
 
 let apiKeyConfigured = false;
 let notificationTimer = null;
+let speechModelPollTimer = null;
 
 async function apiFetch(path, options = {}) {
   const config = await apiConfigPromise;
@@ -58,6 +61,41 @@ function showNotification(message, isError = false) {
   if (isError) elements.notification.classList.add('error');
   notificationTimer = setTimeout(() => elements.notification.classList.add('hidden'), 4500);
 }
+
+function renderSpeechModelStatus(data) {
+  elements.speechModelStatus.textContent = data.message;
+  elements.speechModelStatus.dataset.state = data.state;
+  elements.downloadSpeechModel.disabled = data.state === 'ready' || data.state === 'downloading';
+  elements.downloadSpeechModel.textContent = data.state === 'ready'
+    ? '模型已就绪' : data.state === 'failed' ? '重试下载语音识别模型' : '下载语音识别模型';
+  clearTimeout(speechModelPollTimer);
+  if (data.state === 'downloading') {
+    speechModelPollTimer = setTimeout(() => { void loadSpeechModelStatus(); }, 1200);
+  }
+}
+
+async function loadSpeechModelStatus() {
+  try {
+    renderSpeechModelStatus(await responseJson(await apiFetch('/api/speech-model')));
+  } catch (error) {
+    elements.speechModelStatus.textContent = `模型状态检查失败：${error.message}`;
+    elements.speechModelStatus.dataset.state = 'failed';
+    elements.downloadSpeechModel.disabled = false;
+    elements.downloadSpeechModel.textContent = '重试下载语音识别模型';
+  }
+}
+
+elements.downloadSpeechModel.addEventListener('click', async () => {
+  if (elements.downloadSpeechModel.disabled) return;
+  elements.downloadSpeechModel.disabled = true;
+  try {
+    renderSpeechModelStatus(await responseJson(await apiFetch('/api/speech-model/download', { method: 'POST' })));
+  } catch (error) {
+    elements.speechModelStatus.textContent = `下载请求失败：${error.message}`;
+    elements.speechModelStatus.dataset.state = 'failed';
+    elements.downloadSpeechModel.disabled = false;
+  }
+});
 
 document.querySelectorAll('.preset-btn').forEach((button) => {
   button.addEventListener('click', () => {
@@ -344,6 +382,6 @@ elements.saveVoiceSettings.addEventListener('click', () => runWithButtonDisabled
 elements.refreshKb.addEventListener('click', loadKnowledgeBase);
 elements.showTeleprompter.addEventListener('click', () => window.electronAPI.showTeleprompter());
 
-Promise.all([loadSettings(), loadKnowledgeBase()]).catch((error) => {
+Promise.all([loadSettings(), loadKnowledgeBase(), loadSpeechModelStatus()]).catch((error) => {
   showNotification(`初始化失败：${error.message}`, true);
 });

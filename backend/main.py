@@ -20,6 +20,7 @@ try:
     from .llm_service import LLMService
     from .meeting_store import MeetingStore
     from .security import MAX_UPLOAD_BYTES, safe_upload_path
+    from .speech_model import speech_model
     from .voice_recognition import VoiceRecognizer
 except ImportError:
     from config import persist_settings, settings
@@ -27,6 +28,7 @@ except ImportError:
     from llm_service import LLMService
     from meeting_store import MeetingStore
     from security import MAX_UPLOAD_BYTES, safe_upload_path
+    from speech_model import speech_model
     from voice_recognition import VoiceRecognizer
 
 
@@ -58,7 +60,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="Meeting Assistant API",
-    version="1.1.0",
+    version="0.0.1",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -143,6 +145,16 @@ async def health_check():
     return {"status": "ok", "api_key_configured": bool(settings.openai_api_key)}
 
 
+@app.get("/api/speech-model")
+async def speech_model_status():
+    return speech_model.status()
+
+
+@app.post("/api/speech-model/download")
+async def download_speech_model():
+    return speech_model.start_download()
+
+
 def _websocket_token(websocket: WebSocket) -> str:
     protocols = [
         item.strip()
@@ -225,6 +237,10 @@ async def websocket_voice(websocket: WebSocket):
                         break
         except Exception as exc:
             logger.info("Voice WebSocket closed: %s", exc)
+            try:
+                await websocket.send_json({"type": "error", "message": str(exc)})
+            except Exception:
+                pass
         finally:
             await asyncio.to_thread(voice_recognizer.stop_listening)
             meeting_store.close_audio()

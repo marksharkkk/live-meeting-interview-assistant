@@ -39,17 +39,17 @@
   <p><strong>先把声音变成文字，再对文字做翻译、总结或回答。</strong>这四件事可以同时存在，但不是同一个开关。</p>
   <div class="tablewrap"><table>
     <tr><th>功能</th><th>它做什么</th><th>是否必须联网</th></tr>
-    <tr><td><strong>实时字幕</strong></td><td>把麦克风、耳机或系统音频里的讲话识别成原文。</td><td>语音识别在本机运行；第一次准备模型需要等待。</td></tr>
-    <tr><td><strong>实时翻译</strong></td><td>在原文下面显示中文或英文译文。</td><td>安装本地 OPUS-MT 后可优先本地翻译；否则使用主界面配置的在线模型。</td></tr>
+    <tr><td><strong>实时字幕</strong></td><td>把麦克风、耳机或系统音频里的讲话识别成原文。</td><td>首次需点击下载语音识别模型；完成后在本机离线运行。</td></tr>
+    <tr><td><strong>实时翻译</strong></td><td>在原文下面显示中文或英文译文。</td><td>Windows 下载版预装英译中 OPUS-MT，本地模型优先；模型缺失或翻译失败时才使用在线服务。中文译英文暂用在线服务。</td></tr>
     <tr><td><strong>会议记录与总结</strong></td><td>保存原始文字、可选原音频，并生成实时总结或结束后的完整总结。</td><td>总结需要调用主界面配置的 AI 服务。</td></tr>
     <tr><td><strong>回答辅助</strong></td><td>根据最近字幕、选中的字幕或手动输入的问题生成可直接参考的回答。</td><td>需要 AI 服务；生成期间不会停止监听。</td></tr>
     <tr><td><strong>知识库</strong></td><td>把你的简历、项目资料或会议材料提供给回答辅助作为参考。</td><td>文件在本机处理；生成回答仍需要 AI 服务。</td></tr>
   </table></div>
-  <div class="box"><strong>最简单的使用流程：</strong>打开提词器 → 选择音源和语言 → 点击“开始” → 看实时字幕 → 需要时切换“回答辅助”或开启“实时总结” → 点击“结束并保存”。</div>
+  <div class="box"><strong>最简单的使用流程：</strong>首次在主界面下载语音识别模型 → 打开提词器 → 选择音源和语言 → 点击“开始” → 看实时字幕 → 需要时切换“回答辅助”或开启“实时总结” → 点击“结束并保存”。</div>
 
   <h2 id="install">二、安装与启动</h2>
   <h3>普通用户：下载 ZIP 版</h3>
-  <p>打开 <a href="https://github.com/marksharkkk/live-meeting-interview-assistant/releases">GitHub Releases</a>，下载 Windows ZIP，解压到自己有权限的文件夹，双击 <code>MeetingAssistant.exe</code>。不需要安装 Node.js、Python、uv 或 Volta。首次语音识别会下载 Whisper 模型；AI 回答和在线翻译仍需自己配置 API。</p>
+  <p>Windows 0.0.1 ZIP 发布后，打开 <a href="https://github.com/marksharkkk/live-meeting-interview-assistant/releases">GitHub Releases</a> 下载附件，解压到自己有权限的文件夹，双击 <code>MeetingAssistant.exe</code>。如果没有 ZIP 附件，说明下载版还没发布；GitHub 自动生成的“Source code”压缩包不是免安装版。下载版不需要安装 Node.js、Python、uv 或 Volta，英译中本地模型已经随包提供。首次使用需点击按钮下载 Whisper 语音识别模型；AI 回答、总结和中文译英文仍需自己配置 API。</p>
   <p>ZIP 版的数据保存在 <code>%APPDATA%\meeting-assistant\</code>，不是解压目录；换新版本时保留这个目录即可。启动时后端首次加载可能需要一两分钟。</p>
   <h3>开发者：从源码安装</h3>
   <div class="step"><div class="num">1</div><div>先安装两个小工具。<strong>uv</strong>负责按 <code>uv.lock</code> 创建项目自己的 Python <code>.venv</code>；<strong>Volta</strong>负责按 <code>package.json</code> 固定 Node.js、npm 版本。它们会帮助安装项目包，但本身不会自动安装；电脑已有就跳过。</div></div>
@@ -65,8 +65,15 @@ volta --version</code></pre>
   <div class="box note"><strong>如果窗口打不开：</strong>先关闭旧的会议通窗口；如果任务管理器里仍有旧的 <code>meeting-assistant</code> 或 Electron 进程，请结束旧进程后再双击 <code>start.bat</code>。第二次启动有可能只是唤醒旧版本，而不是加载刚更新的文件。</div>
 
   <h2 id="setup">三、第一次设置</h2>
-  <h3>1. 配置 AI 服务</h3>
-  <p>打开设置窗口的“AI 大模型配置”，填写 API Base URL、模型名称和 API Key，然后点击“保存 API 设置”，再点击“测试连接”。</p>
+  <h3>1. 下载语音识别模型（首次使用必做）</h3>
+  <ol>
+    <li>保持联网，在主界面找到<strong>“语音识别设置”</strong>。</li>
+    <li>看到“尚未下载语音识别模型”时，点击<strong>“下载语音识别模型”</strong>。下载中请保持程序打开；这里没有百分比，状态会自动更新。</li>
+    <li>看到<strong>“语音识别模型已就绪”</strong>后，才打开提词器开始监听。以后无需重复下载，可离线识别。</li>
+    <li>如果显示“下载失败”，检查网络连接，再点击<strong>“重试下载语音识别模型”</strong>。模型保存在本机用户数据目录，换新 ZIP 不必重下。</li>
+  </ol>
+  <h3>2. 配置 AI 服务（只看字幕可暂时跳过）</h3>
+  <p>如果要使用回答、总结或中文译英文，请在设置窗口的“AI 大模型配置”填写 API Base URL、模型名称和 API Key，然后点击“保存 API 设置”，再点击“测试连接”。仅使用本机语音识别及英译中，不需要 API Key。</p>
   <table><tr><th>服务</th><th>API Base URL 示例</th><th>模型示例</th></tr>
     <tr><td>DeepSeek</td><td><code>https://api.deepseek.com/v1</code></td><td><code>deepseek-chat</code> 或账户中实际可用的模型</td></tr>
     <tr><td>OpenAI 兼容服务</td><td>按服务商文档填写</td><td>按服务商文档填写</td></tr>
@@ -100,14 +107,14 @@ volta --version</code></pre>
   <h3>4. 选择识别语言和翻译目标</h3>
   <table><tr><th>设置</th><th>怎么选</th></tr>
     <tr><td><strong>识别语言</strong></td><td>中文、英文、中英混用或不确定时选“自动检测”；整场只有一种语言时可以手动选择。</td></tr>
-    <tr><td><strong>字幕翻译</strong></td><td>“中英互译”适合一般场景；也可以固定“翻成中文”“翻成英文”，或选择“关闭翻译”。连续讲话时会先显示可替换的实时预览，完整句结束后才保存最终译文。</td></tr>
+    <tr><td><strong>字幕翻译</strong></td><td>“中英互译”适合一般场景；也可以固定“翻成中文”“翻成英文”，或选择“关闭翻译”。连续讲话时会先显示可替换的实时预览；遇到句末标点、自然停顿或达到安全长度时，会分批保存译文，不会一直重译从开头累积的全文。原始记录保持完整。</td></tr>
     <tr><td><strong>回答语言</strong></td><td>在“回答辅助”中选择“跟随问题”、中文或英文；它只影响 AI 回答，不改变字幕识别。</td></tr>
   </table>
   <div class="box">识别语言、翻译目标、回答语言是三件不同的事。例如：对方说英语 → 识别语言选自动 → 字幕翻译选翻成中文 → 回答语言选英文，就能看到英文原文和中文译文，同时生成英文回答建议。</div>
 
   <h2 id="test">四、先试录两分钟</h2>
   <ol>
-    <li>打开提词器，展开“音源与语言”，确认音源和语言。</li>
+    <li>先在主界面确认语音识别模型显示“已就绪”；未下载时点击“下载语音识别模型”并等待完成。然后打开提词器，展开“音源与语言”，确认音源和语言。</li>
     <li>填写一个测试名称，确认“保存音频”是否勾选，然后点击<strong>“开始”</strong>。</li>
     <li>让会议软件播放一段清楚的中文或英文讲话，观察左侧是否出现<strong>原文</strong>。</li>
     <li>先看原文，再看下面的实时译文预览；它可能随着讲话继续被替换。完整一句结束后，最终译文才会保存到本场记录。</li>
@@ -173,6 +180,7 @@ volta --version</code></pre>
     <tr><td>戴耳机但识别不到对方</td><td>音源选择系统音频回环或耳机输出，不要选择耳机麦克风；先播放一段会议声音测试。</td></tr>
     <tr><td>出现 Unanticipated host error</td><td>暂停监听，换成“自动（系统音频回环）”或重新选择可用设备；关闭其他占用音频设备的软件后重试。</td></tr>
     <tr><td>有声音但没有文字</td><td>确认状态显示“监听中”，确认音量确实从所选设备播放，并选择自动检测或正确语言。</td></tr>
+    <tr><td>提示语音识别模型未就绪</td><td>回到主界面的“语音识别设置”，点击“下载语音识别模型”，等待显示“已就绪”；失败时检查网络并点“重试下载”。</td></tr>
     <tr><td>中英文混用识别不准</td><td>识别语言选“自动检测”。如果整段语言固定，再手动选择中文或英文；重要人名、数字和结论要人工核对。</td></tr>
     <tr><td>一直显示“翻译中”</td><td>先看原文是否完整出现。翻译按完整句发送；检查 API 配置，或在字幕设置中暂时关闭翻译确认识别本身正常。</td></tr>
     <tr><td>答案显示“已生成”但看不到</td><td>打开“回答辅助”侧栏；如果当前是字幕全屏模式，点击“显示 AI 侧栏”。</td></tr>

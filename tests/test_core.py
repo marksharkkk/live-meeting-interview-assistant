@@ -15,7 +15,8 @@ BACKEND_DIR = PROJECT_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
 from knowledge_base import KnowledgeBase
-from local_translation import detect_translation_direction
+from local_translation import LocalTranslationService, detect_translation_direction
+import local_translation
 from llm_service import LLMService
 from security import safe_upload_path, validate_upload_filename
 from voice_recognition import VoiceRecognizer, _AudioSegmenter
@@ -81,6 +82,29 @@ class KnowledgeBaseTests(unittest.TestCase):
             moved_kb = KnowledgeBase(moved)
             self.assertTrue(moved_kb.status()["files"][0]["loaded"])
             self.assertIn("portable project knowledge", asyncio.run(moved_kb.query("portable project")))
+
+
+class LocalTranslationPackagingTests(unittest.TestCase):
+    def test_packaged_model_is_used_when_user_has_not_installed_one(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package_root = Path(directory) / "package"
+            user_root = Path(directory) / "user"
+            package_model = package_root / "opus-mt-en-zh"
+            package_model.mkdir(parents=True)
+            for filename in ("model.bin", "source.spm", "target.spm"):
+                (package_model / filename).touch()
+            with patch.object(local_translation, "PACKAGE_MODELS_DIR", package_root), patch.object(
+                local_translation, "USER_MODELS_DIR", user_root
+            ):
+                self.assertEqual(LocalTranslationService._model_dir("en", "zh"), package_model)
+                user_model = user_root / "opus-mt-en-zh"
+                user_model.mkdir(parents=True)
+                for filename in ("model.bin", "source.spm", "target.spm"):
+                    (user_model / filename).touch()
+                self.assertEqual(LocalTranslationService._model_dir("en", "zh"), user_model)
+
+    def test_english_to_chinese_requests_simplified_chinese(self):
+        self.assertEqual(LocalTranslationService._TARGET_PREFIXES[("en", "zh")], ">>cmn_Hans<<")
 
 
 class VoiceRecognizerTests(unittest.TestCase):
